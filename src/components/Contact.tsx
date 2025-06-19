@@ -17,11 +17,18 @@ const Contact = () => {
     setSubmitStatus('idle');
 
     try {
-      // In a real implementation, you would use your Supabase URL
-      // For now, we'll simulate the API call
-      const response = await fetch('/api/send-contact-email', {
+      // Get environment variables
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+      if (!supabaseUrl || !supabaseAnonKey) {
+        throw new Error('Supabase configuration not found. Please connect to Supabase first.');
+      }
+
+      const response = await fetch(`${supabaseUrl}/functions/v1/send-contact-email`, {
         method: 'POST',
         headers: {
+          'Authorization': `Bearer ${supabaseAnonKey}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(formData),
@@ -32,12 +39,24 @@ const Contact = () => {
         setStatusMessage('Thank you! Your message has been sent successfully. We\'ll get back to you soon!');
         setFormData({ name: '', email: '', message: '' });
       } else {
-        throw new Error('Failed to send message');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to send message');
       }
     } catch (error) {
       console.error('Error sending message:', error);
       setSubmitStatus('error');
-      setStatusMessage('Sorry, there was an error sending your message. Please try again or contact us directly.');
+      
+      if (error instanceof Error) {
+        if (error.message.includes('Supabase configuration')) {
+          setStatusMessage('Please connect to Supabase first by clicking the "Connect to Supabase" button in the top right.');
+        } else if (error.message.includes('Email service not configured')) {
+          setStatusMessage('Email service is not configured. Please add your RESEND_API_KEY to Supabase environment variables.');
+        } else {
+          setStatusMessage(`Error: ${error.message}`);
+        }
+      } else {
+        setStatusMessage('Sorry, there was an error sending your message. Please try again or contact us directly.');
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -124,17 +143,17 @@ const Contact = () => {
 
           <div>
             {submitStatus !== 'idle' && (
-              <div className={`mb-6 p-4 rounded-lg flex items-center gap-3 ${
+              <div className={`mb-6 p-4 rounded-lg flex items-start gap-3 ${
                 submitStatus === 'success' 
                   ? 'bg-green-900/20 border border-green-500/30 text-green-300' 
                   : 'bg-red-900/20 border border-red-500/30 text-red-300'
               }`}>
                 {submitStatus === 'success' ? (
-                  <CheckCircle size={20} className="text-green-400 flex-shrink-0" />
+                  <CheckCircle size={20} className="text-green-400 flex-shrink-0 mt-0.5" />
                 ) : (
-                  <AlertCircle size={20} className="text-red-400 flex-shrink-0" />
+                  <AlertCircle size={20} className="text-red-400 flex-shrink-0 mt-0.5" />
                 )}
-                <p className="text-sm">{statusMessage}</p>
+                <p className="text-sm leading-relaxed">{statusMessage}</p>
               </div>
             )}
 
