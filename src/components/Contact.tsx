@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Mail, Phone, MapPin, Send, Instagram, Twitter, Youtube, Facebook } from 'lucide-react';
+import { Mail, Phone, MapPin, Send, Instagram, Twitter, Youtube, Facebook, CheckCircle, AlertCircle } from 'lucide-react';
 
 const Contact = () => {
   const [formData, setFormData] = useState({
@@ -7,11 +7,40 @@ const Contact = () => {
     email: '',
     message: ''
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [statusMessage, setStatusMessage] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle form submission here
-    console.log('Form submitted:', formData);
+    setIsSubmitting(true);
+    setSubmitStatus('idle');
+
+    try {
+      // In a real implementation, you would use your Supabase URL
+      // For now, we'll simulate the API call
+      const response = await fetch('/api/send-contact-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (response.ok) {
+        setSubmitStatus('success');
+        setStatusMessage('Thank you! Your message has been sent successfully. We\'ll get back to you soon!');
+        setFormData({ name: '', email: '', message: '' });
+      } else {
+        throw new Error('Failed to send message');
+      }
+    } catch (error) {
+      console.error('Error sending message:', error);
+      setSubmitStatus('error');
+      setStatusMessage('Sorry, there was an error sending your message. Please try again or contact us directly.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -51,7 +80,7 @@ const Contact = () => {
                 </div>
                 <div>
                   <p className="text-gray-400">Email</p>
-                  <p className="text-white font-semibold">booking@silversoulsband.com</p>
+                  <p className="text-white font-semibold">silversouls.ca@gmail.com</p>
                 </div>
               </div>
               
@@ -94,10 +123,25 @@ const Contact = () => {
           </div>
 
           <div>
+            {submitStatus !== 'idle' && (
+              <div className={`mb-6 p-4 rounded-lg flex items-center gap-3 ${
+                submitStatus === 'success' 
+                  ? 'bg-green-900/20 border border-green-500/30 text-green-300' 
+                  : 'bg-red-900/20 border border-red-500/30 text-red-300'
+              }`}>
+                {submitStatus === 'success' ? (
+                  <CheckCircle size={20} className="text-green-400 flex-shrink-0" />
+                ) : (
+                  <AlertCircle size={20} className="text-red-400 flex-shrink-0" />
+                )}
+                <p className="text-sm">{statusMessage}</p>
+              </div>
+            )}
+
             <form onSubmit={handleSubmit} className="space-y-6">
               <div>
                 <label htmlFor="name" className="block text-sm font-medium text-gray-300 mb-2">
-                  Name
+                  Name *
                 </label>
                 <input
                   type="text"
@@ -106,14 +150,15 @@ const Contact = () => {
                   value={formData.name}
                   onChange={handleChange}
                   required
-                  className="w-full px-4 py-3 bg-white/5 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-silver-400 focus:bg-white/10 transition-all"
+                  disabled={isSubmitting}
+                  className="w-full px-4 py-3 bg-white/5 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-silver-400 focus:bg-white/10 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   placeholder="Your name"
                 />
               </div>
               
               <div>
                 <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-2">
-                  Email
+                  Email *
                 </label>
                 <input
                   type="email"
@@ -122,14 +167,15 @@ const Contact = () => {
                   value={formData.email}
                   onChange={handleChange}
                   required
-                  className="w-full px-4 py-3 bg-white/5 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-silver-400 focus:bg-white/10 transition-all"
+                  disabled={isSubmitting}
+                  className="w-full px-4 py-3 bg-white/5 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-silver-400 focus:bg-white/10 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   placeholder="your@email.com"
                 />
               </div>
               
               <div>
                 <label htmlFor="message" className="block text-sm font-medium text-gray-300 mb-2">
-                  Message
+                  Message *
                 </label>
                 <textarea
                   id="message"
@@ -137,18 +183,29 @@ const Contact = () => {
                   value={formData.message}
                   onChange={handleChange}
                   required
+                  disabled={isSubmitting}
                   rows={6}
-                  className="w-full px-4 py-3 bg-white/5 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-silver-400 focus:bg-white/10 transition-all resize-none"
+                  className="w-full px-4 py-3 bg-white/5 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-silver-400 focus:bg-white/10 transition-all resize-none disabled:opacity-50 disabled:cursor-not-allowed"
                   placeholder="Tell us about your event, venue, or song request!"
                 />
               </div>
               
               <button
                 type="submit"
-                className="w-full bg-gradient-to-r from-silver-600 to-gray-600 hover:from-silver-700 hover:to-gray-700 text-white px-8 py-4 rounded-lg font-semibold transition-all duration-300 hover:scale-105 flex items-center justify-center gap-3"
+                disabled={isSubmitting}
+                className="w-full bg-gradient-to-r from-silver-600 to-gray-600 hover:from-silver-700 hover:to-gray-700 text-white px-8 py-4 rounded-lg font-semibold transition-all duration-300 hover:scale-105 flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
               >
-                <Send size={20} />
-                Send Message
+                {isSubmitting ? (
+                  <>
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                    Sending...
+                  </>
+                ) : (
+                  <>
+                    <Send size={20} />
+                    Send Message
+                  </>
+                )}
               </button>
             </form>
           </div>
