@@ -90,7 +90,7 @@ Deno.serve(async (req: Request) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: 'Silver Souls Website <noreply@silversouls.com>',
+        from: 'Silver Souls Website <onboarding@resend.dev>',
         to: ['silversouls.ca@gmail.com'],
         reply_to: email,
         subject: `New Contact Form Submission from ${name}`,
